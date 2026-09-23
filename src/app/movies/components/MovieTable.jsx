@@ -1,27 +1,58 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation"; //4. agrgo el router para pag detalle
 
 export default function MovieTable({ movies }) {
   const [search, setSearch] = useState("");
 
   const [userEmail, setUserEmail] = useState(null);
   const [favorites, setFavorites] = useState([]);
+  const router = useRouter(); //4. agrgo el router para pag detalle
 
   useEffect(() => {
     const email = localStorage.getItem("userEmail");
     setUserEmail(email);
     // TODO: si existe `email`, leer `localStorage.getItem("favorites_" + email)`,
     //       parsearlo con JSON.parse y guardarlo en `favorites` con setFavorites
+    //3. Busco en localStorage los favoritos y guardo
+    if (email) {
+      const storedFavoritos = localStorage.getItem("favorites_" + email);
+      if (storedFavoritos) {
+
+        setFavorites(JSON.parse(storedFavoritos));
+
+      }
+    }
+
   }, []);
 
   function toggleFavorite(movieId) {
     // TODO: si `movieId` ya está en `favorites`, quitarlo; si no, agregarlo.
     //       Actualizar el estado `favorites` y guardar el nuevo array en
     //       localStorage bajo la clave "favorites_" + userEmail (usar JSON.stringify)
+
+    //3. update para boton de favoritos
+    let updatedFavorites;
+
+    if (favorites.includes(movieId)) {
+      //si ya esta en favoritos, lo quito
+      updatedFavorites = favorites.filter((id) => id !== movieId);
+    } else {
+      //si no esta en favoritos, lo agrego
+      updatedFavorites = [...favorites, movieId];
+    }
+    //actualizo el estado y el localStorage
+    setFavorites(updatedFavorites);
+    localStorage.setItem("favorites_" + userEmail, JSON.stringify(updatedFavorites));
   }
 
   // TODO: filtrar el array `movies` usando `search` y guardar el resultado en `filteredMovies`
+  //2. Filtro y paso a minisculas 
+  const filteredMovies = movies.filter((movie) =>
+    movie.title.toLowerCase().includes(search.toLowerCase())
+  );
+
 
   return (
     <div className="flex flex-col gap-4">
@@ -45,26 +76,29 @@ export default function MovieTable({ movies }) {
         <thead className="bg-white/5 text-xs uppercase tracking-[0.4em] text-zinc-400">
           <tr>
             <th className="px-6 py-3">Título</th>
+            <th className="px-6 py-3">Año</th>  {/* 1. Agrego año */}
             <th className="px-6 py-3">Plot</th>
             <th className="px-6 py-3">Cast</th>
             {userEmail && <th className="px-6 py-3 text-center">Fav</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-white/5">
-          {movies.map((movie) => (
+          {filteredMovies.map((movie) => ( //2. cambio movies por la const filteredMovies y funca el buscador
             <tr key={movie._id} className="transition hover:bg-white/5 focus-within:bg-white/5">
               <td className="px-6 py-4 font-semibold text-white">
                 <button
                   type="button"
                   className="block text-left text-inherit"
                   onClick={() => {
-                    console.log(`Seleccionada película: ${movie._id} - ${movie.title}`);
+                    router.push(`/movies/${movie._id}`); //4. redirijo a la pagina de detalle
+                    //console.log(`Seleccionada película: ${movie._id} - ${movie.title}`);
                     // TODO: redirigir al detalle cuando exista la ruta
                   }}
                 >
                   {movie.title}
                 </button>
               </td>
+              <td className="px-6 py-4 text-zinc-200">{movie.year || "-"}</td> {/* 1. agrego el campo year */}
               <td className="px-6 py-4 text-zinc-200">{movie.plot || "-"}</td>
               <td className="px-6 py-4 text-zinc-200">
                 {movie.cast?.length ? movie.cast.join(", ") : "-"}
